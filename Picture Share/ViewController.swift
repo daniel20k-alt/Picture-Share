@@ -24,20 +24,21 @@ class ViewController: UICollectionViewController, UINavigationControllerDelegate
         title = "Share a picture"
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(showConnectionPrompt))
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .camera, target: self, action: #selector(importPictures))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .camera, target: self, action: #selector(importPicture))
         
-        mcSession = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
+        mcSession = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .optional)
         mcSession?.delegate = self
     }
     
     func startHosting(action: UIAlertAction) {
         guard let mcSession = mcSession else { return }
-        mcAdvertiserAssistant = MCAdvertiserAssistant(serviceType: "photoshare-app", discoveryInfo: nil, session: mcSession)
+        mcAdvertiserAssistant = MCAdvertiserAssistant(serviceType: "photoshare-app1", discoveryInfo: nil, session: mcSession)
+        mcAdvertiserAssistant?.start() //starts looking for connections
     }
     
     func joinSession(action: UIAlertAction) {
         guard let mcSession = mcSession else { return }
-        let mcBrowser = MCBrowserViewController(serviceType: "photoshare-app", session: mcSession)
+        let mcBrowser = MCBrowserViewController(serviceType: "photoshare-app1", session: mcSession)
         mcBrowser.delegate = self
         present(mcBrowser, animated: true)
     }
@@ -56,7 +57,7 @@ class ViewController: UICollectionViewController, UINavigationControllerDelegate
         return cell
     }
     
-    @objc func importPictures() {
+    @objc func importPicture() {
         let picker = UIImagePickerController()
         picker.allowsEditing = true
         picker.delegate = self
@@ -114,16 +115,17 @@ class ViewController: UICollectionViewController, UINavigationControllerDelegate
     
     func browserViewControllerWasCancelled(_ browserViewController: MCBrowserViewController) {
         dismiss(animated: true)
+        
     }
     
     //debugging connection status
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         switch state {
-        case .connected:
+        case MCSessionState.connected:
             print("Connected: \(peerID.displayName)")
-        case .connecting:
+        case MCSessionState.connecting:
             print("Connecting: \(peerID.displayName)")
-        case .notConnected:
+        case MCSessionState.notConnected:
             print("Not connected \(peerID.displayName)")
             
         @unknown default:
