@@ -9,18 +9,17 @@
 import MultipeerConnectivity
 import UIKit
 
-class ViewController: UICollectionViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, MCSessionDelegate, MCBrowserViewControllerDelegate {
+class ViewController: UICollectionViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, MCSessionDelegate, MCBrowserViewControllerDelegate, MCNearbyServiceAdvertiserDelegate {
     
     var images = [UIImage]()
     
     var peerID = MCPeerID(displayName: UIDevice.current.name)
     var mcSession: MCSession?
-    var mcAdvertiserAssistant: MCAdvertiserAssistant?
+    var mcNearbyServiceAdvertiser: MCNearbyServiceAdvertiser?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        
         title = "Share a picture"
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(showConnectionPrompt))
@@ -32,13 +31,15 @@ class ViewController: UICollectionViewController, UINavigationControllerDelegate
     
     func startHosting(action: UIAlertAction) {
         guard let mcSession = mcSession else { return }
-        mcAdvertiserAssistant = MCAdvertiserAssistant(serviceType: "photoshare-app1", discoveryInfo: nil, session: mcSession)
-        mcAdvertiserAssistant?.start() //starts looking for connections
+        
+        mcNearbyServiceAdvertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: nil, serviceType: "picture-share")
+        mcNearbyServiceAdvertiser?.delegate = self
+        mcNearbyServiceAdvertiser?.startAdvertisingPeer()
     }
     
     func joinSession(action: UIAlertAction) {
         guard let mcSession = mcSession else { return }
-        let mcBrowser = MCBrowserViewController(serviceType: "photoshare-app1", session: mcSession)
+        let mcBrowser = MCBrowserViewController(serviceType: "picture-share", session: mcSession)
         mcBrowser.delegate = self
         present(mcBrowser, animated: true)
     }
@@ -95,6 +96,10 @@ class ViewController: UICollectionViewController, UINavigationControllerDelegate
     }
     
     //
+    func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
+        invitationHandler(true, mcSession)
+    }
+    
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
         
     }
